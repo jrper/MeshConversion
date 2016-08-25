@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "exodus_converter.h"
+#include "mesh_converter.h"
 
 int main(int argc, char *argv[]) {
 

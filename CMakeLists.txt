@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.8)
 
-project(exodus_converter)
+project(mesh_converter)
 
 if(COMMAND cmake_policy)
   cmake_policy(SET CMP0003 NEW)
@@ -12,7 +12,8 @@ INCLUDE(${VTK_USE_FILE})
 
 
 link_directories(${VTK_DIR})
+include_directories(include)
 
-add_executable(exodus_converter exodus_converter.cxx exodus_converter.h vtkGmshWriter.cxx vtkGmshWriter.h vtkGmshReader.h vtkGmshReader.cxx)
-target_link_libraries(exodus_converter ${VTK_LIBRARIES})
+add_executable(mesh_converter src/mesh_converter.cxx src/vtkGmshWriter.cxx  src/vtkGmshReader.cxx)
+target_link_libraries(mesh_converter ${VTK_LIBRARIES})
 
