@@ -1,5 +1,7 @@
 #include "vtkExodusIIReader.h"
 #include "vtkGmshReader.h"
+#include "vtkXMLUnstructuredGridReader.h"
+#include "vtkXMLPUnstructuredGridReader.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkXMLUnstructuredGridWriter.h"
@@ -54,6 +56,10 @@ int main(int argc, char *argv[]) {
     mbdata = read_exodusII(argv[optind++]);
   }  else if (strcmp(input_format,"gmsh")==0 ) {
     ugdata = read_gmsh(argv[optind++]);
+  }  else if (strcmp(input_format,"vtu")==0 ) {
+    ugdata = read_vtu(argv[optind++]);
+  }  else if (strcmp(input_format,"pvtu")==0 ) {
+    ugdata = read_pvtu(argv[optind++]);
   }  else {
     std::cout<< "Unrecognised input format: "<< input_format << std::endl;
     return 1;
@@ -71,12 +77,7 @@ int main(int argc, char *argv[]) {
       ugdata=multiblock_to_unstucturedgrid(mbdata);
     }
     flag=write_vtu(ugdata,argv[optind]);
-  } else if (strcmp(output_format,"vtu")==0) {
-    if (mbdata) {
-      ugdata=multiblock_to_unstucturedgrid(mbdata);
-    }
-    flag=write_vtu(ugdata,argv[optind]);
-  } else if (strcmp(output_format,"vtm")==0) {
+  }  else if (strcmp(output_format,"vtm")==0) {
     if (ugdata) {
       //      mbdata=unstucturedgrid_to_multiblock(ugdata);
     }
@@ -155,6 +156,28 @@ vtkMultiBlockDataSet* read_exodusII(char* fname){
  vtkUnstructuredGrid* read_gmsh(char* fname) {
    std::cout << "Reading from GMSH file: " <<fname<<std::endl;
    vtkGmshReader* reader= vtkGmshReader::New();
+   reader->SetFileName(fname);
+   reader->Update();
+   vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
+   ugrid->ShallowCopy(reader->GetOutput());
+   reader->Delete();
+   return ugrid;
+ }
+
+ vtkUnstructuredGrid* read_vtu(char* fname) {
+   std::cout << "Reading from VTK unstructured grid file: " <<fname<<std::endl;
+   vtkXMLUnstructuredGridReader* reader= vtkXMLUnstructuredGridReader::New();
+   reader->SetFileName(fname);
+   reader->Update();
+   vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
+   ugrid->ShallowCopy(reader->GetOutput());
+   reader->Delete();
+   return ugrid;
+ }
+
+vtkUnstructuredGrid* read_pvtu(char* fname) {
+   std::cout << "Reading from VTK parallel unstructured grid file: " <<fname<<std::endl;
+   vtkXMLPUnstructuredGridReader* reader= vtkXMLPUnstructuredGridReader::New();
    reader->SetFileName(fname);
    reader->Update();
    vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();

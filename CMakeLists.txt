@@ -17,3 +17,8 @@ include_directories(include)
 add_executable(mesh_converter src/mesh_converter.cxx src/vtkGmshWriter.cxx  src/vtkGmshReader.cxx)
 target_link_libraries(mesh_converter ${VTK_LIBRARIES})
 
+install(TARGETS mesh_converter
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+
