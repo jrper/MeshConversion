@@ -6,14 +6,18 @@ A mesh file conversion tool
 
 Build with:
 
-    cmake
+    cmake .
     make
-    
     
 ## Running
 
 Run with:
-    exodus_converter [-i input_format] [-o output_format] [-h] input_file output_file
+    mesh_converter [-i input_format] [-o output_format] [-h] input_file output_file
 
-input formats supported: exodusII, gmsh
-output formats supported: gmsh, vtu
+Input formats supported:
+ * exodusII
+ * gmsh
+ 
+Output formats supported:
+ * gmsh
+ * vtu

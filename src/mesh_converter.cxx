@@ -164,7 +164,7 @@ vtkMultiBlockDataSet* read_exodusII(char* fname){
  }
 
 int print_usage(){
-  std::cout << "usage: exodus_converter [-i input_format] [-o output_format] [-h] input_file output_file"<<std::endl;
+  std::cout << "usage: mesh_converter [-i input_format] [-o output_format] [-h] input_file output_file"<<std::endl;
   return 0;
 }
 
