@@ -14,13 +14,14 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <string>
 
 #include "mesh_converter.h"
 
 int main(int argc, char *argv[]) {
 
-  char* input_format="exodus";
-  char* output_format="gmsh";
+  std::string input_format="exodus";
+  std::string output_format="gmsh";
   int opt;
 
   if (argc <3) {
@@ -52,13 +53,13 @@ int main(int argc, char *argv[]) {
   vtkMultiBlockDataSet* mbdata = NULL;
   vtkUnstructuredGrid* ugdata  = NULL;
 
-  if (strcmp(input_format,"exodus")==0 ) {
+  if (input_format.compare("exodus")==0 ) {
     mbdata = read_exodusII(argv[optind++]);
-  }  else if (strcmp(input_format,"gmsh")==0 ) {
+  }  else if (input_format.compare("gmsh")==0 ) {
     ugdata = read_gmsh(argv[optind++]);
-  }  else if (strcmp(input_format,"vtu")==0 ) {
+  }  else if (input_format.compare("vtu")==0 ) {
     ugdata = read_vtu(argv[optind++]);
-  }  else if (strcmp(input_format,"pvtu")==0 ) {
+  }  else if (input_format.compare("pvtu")==0 ) {
     ugdata = read_pvtu(argv[optind++]);
   }  else {
     std::cout<< "Unrecognised input format: "<< input_format << std::endl;
@@ -67,17 +68,17 @@ int main(int argc, char *argv[]) {
   
   int flag;
   
-  if (strcmp(output_format,"gmsh")==0) {
+  if (output_format.compare("gmsh")==0) {
     if (mbdata) {
       ugdata=multiblock_to_unstucturedgrid(mbdata);
     }
     flag=write_gmsh(ugdata,argv[optind]);
-  } else if (strcmp(output_format,"vtu")==0) {
+  } else if (output_format.compare("vtu")==0) {
     if (mbdata) {
       ugdata=multiblock_to_unstucturedgrid(mbdata);
     }
     flag=write_vtu(ugdata,argv[optind]);
-  }  else if (strcmp(output_format,"vtm")==0) {
+  }  else if (output_format.compare("vtm")==0) {
     if (ugdata) {
       //      mbdata=unstucturedgrid_to_multiblock(ugdata);
     }
