@@ -13,6 +13,6 @@ INCLUDE(${VTK_USE_FILE})
 
 link_directories(${VTK_DIR})
 
-add_executable(exodus_converter exodus_converter.cxx vtkGmshWriter.cxx vtkGmshWriter.h)
+add_executable(exodus_converter exodus_converter.cxx exodus_converter.h vtkGmshWriter.cxx vtkGmshWriter.h vtkGmshReader.h vtkGmshReader.cxx)
 target_link_libraries(exodus_converter ${VTK_LIBRARIES})
 
