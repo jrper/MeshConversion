@@ -25,12 +25,7 @@ int main(int argc, char *argv[]) {
   std::string output_format="gmsh";
   int opt;
 
-  if (argc <3) {
-    print_usage();
-    return 0;
-  }
-
-  while (  (opt = getopt(argc, argv, "i::o::h")) != -1 ) { 
+  while (  (opt = getopt(argc, argv, "i::o::hV")) != -1 ) { 
     switch ( opt ) {
     case 'i':
       if (optarg) {
@@ -44,11 +39,21 @@ int main(int argc, char *argv[]) {
       break;
     case 'h':
       print_usage();
+      return EXIT_SUCCESS;
+      break;
+    case 'V':
+      print_version();
+      return EXIT_SUCCESS;
       break;
     case '?': 
       cerr << "Unknown option: '" << char(optopt) << "'!" << endl;
       break;
     }
+  }
+
+  if (argc <3) {
+    print_usage();
+    return 1;
   }
 
   vtkMultiBlockDataSet* mbdata = NULL;
@@ -202,7 +207,14 @@ vtkUnstructuredGrid* read_triangle(char* fname) {
  }
 
 int print_usage(){
-  std::cout << "usage: mesh_converter [-i input_format] [-o output_format] [-h] input_file output_file"<<std::endl;
+  std::cout << "usage: mesh_converter [-i input_format] [-o output_format] [-hV] input_file output_file"<<std::endl;
+  return 0;
+}
+
+int print_version(){
+  std::cout << "mesh_converter "
+            << CONVERTER_MAJOR_VERSION<<"."<<CONVERTER_MINOR_VERSION
+            <<std::endl;
   return 0;
 }
 
