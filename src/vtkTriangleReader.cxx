@@ -62,23 +62,47 @@ int readTriangleNodes(std::ifstream& TriangleNodeFile,vtkPoints* outpoints)
       }
     outpoints->InsertNextPoint(x,y,z);
   }
-  return 1;
+  return dim;
 }
 
-int readTriangleElements(std::ifstream& TriangleElementFile,vtkUnstructuredGrid* output)
-{ 
-  vtkIdType nelements, npe, ntags;
-  TriangleElementFile >> nelements >> npe >> ntags;
-  output->Allocate(nelements);
 
-  vtkSmartPointer<vtkIntArray> PhysicalIds= vtkSmartPointer<vtkIntArray>::New();
-  PhysicalIds->SetName("PhysicalIds");
-  PhysicalIds->Allocate(nelements);
+int readTriangleElements(std::ifstream& TriangleElementFile,vtkUnstructuredGrid* output, int npe)
+{ 
+  vtkIdType nelements, ntags;
+  if (npe) {
+    TriangleElementFile >> nelements >> ntags;
+  } else {
+    TriangleElementFile >> nelements >> npe >> ntags;
+  }
+
+  std::cout << "No. of elements: " << nelements << " " << output->GetNumberOfCells() << std::endl;
+  
+  vtkSmartPointer<vtkIntArray> PhysicalIds;
+  if (output->GetCellData()->HasArray("PhysicalIds")) {
+    PhysicalIds = vtkIntArray::SafeDownCast(output->GetCellData()->GetArray("PhysicalIds"));
+  } else {
+    PhysicalIds = vtkSmartPointer<vtkIntArray>::New();
+    output->Allocate(nelements);
+    PhysicalIds->SetName("PhysicalIds");
+    PhysicalIds->Allocate(nelements);
+  }
   int eleNo, CellType,tagNo;
   for (vtkIdType i=0;i<nelements;i++){
     TriangleElementFile>> eleNo ;
     switch (npe)
       {
+      case 2:
+	// Line
+	{
+	  int cellPoints[2];
+	  vtkIdType cellPointsVTK[2];
+	  TriangleElementFile>> cellPoints[0] >> cellPoints[1];
+	  for(int j=0;j<npe;j++){
+	    cellPointsVTK[j]=cellPoints[j]-1;
+	  }
+	  output->InsertNextCell((int)3,(vtkIdType)2,cellPointsVTK);
+	  break;
+	}
       case 3:
 	// Triangle
 	{
@@ -110,7 +134,9 @@ int readTriangleElements(std::ifstream& TriangleElementFile,vtkUnstructuredGrid*
       PhysicalIds->InsertNextValue(tag);
       }      
   }
-  output->GetCellData()->AddArray(PhysicalIds);
+  if (~output->GetCellData()->HasArray("PhysicalIds")) {
+    output->GetCellData()->AddArray(PhysicalIds);
+  }
   return 1;
 }
 
@@ -131,22 +157,39 @@ int vtkTriangleReader::RequestData(
   std::string basename=this->FileName;
 
   ifstream TriangleNodeFile;
+  ifstream TriangleBoundaryFile;
   ifstream TriangleElementFile;
   TriangleNodeFile.open(basename+".node");
 
   vtkSmartPointer<vtkPoints> outpoints= vtkSmartPointer<vtkPoints>::New();
   // try to read the point data
-  readTriangleNodes(TriangleNodeFile,outpoints);
+  int dim = readTriangleNodes(TriangleNodeFile,outpoints);
   output->SetPoints(outpoints);
 
   TriangleNodeFile.close();
 
+  int npe=dim+1;
+  // deal with boundaries
+  switch(dim) {
+   case 2:
+     TriangleBoundaryFile.open(basename+".edge");
+     break;
+   case 3:
+     TriangleBoundaryFile.open(basename+".face");
+     break;
+  }
+  if (TriangleBoundaryFile.is_open()) {
+  std::cout << "Reading boundary data" << std::endl; 
+  int npe=dim;
+  readTriangleElements(TriangleBoundaryFile,output,npe);
+}
   // try to open the Triangle element file
 
   TriangleElementFile.open(basename+".ele");
 
   // try to read the element data
-  readTriangleElements(TriangleElementFile,output);
+  npe = 0;
+  readTriangleElements(TriangleElementFile,output, npe);
 
   // close the file
   TriangleElementFile.close();
