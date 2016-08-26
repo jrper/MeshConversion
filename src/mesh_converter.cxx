@@ -2,6 +2,7 @@
 #include "vtkGmshReader.h"
 #include "vtkXMLUnstructuredGridReader.h"
 #include "vtkXMLPUnstructuredGridReader.h"
+#include "vtkTriangleReader.h"
 #include "vtkMultiBlockDataSet.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkXMLUnstructuredGridWriter.h"
@@ -61,6 +62,8 @@ int main(int argc, char *argv[]) {
     ugdata = read_vtu(argv[optind++]);
   }  else if (input_format.compare("pvtu")==0 ) {
     ugdata = read_pvtu(argv[optind++]);
+  }  else if (input_format.compare("triangle")==0 ) {
+    ugdata = read_triangle(argv[optind++]);
   }  else {
     std::cout<< "Unrecognised input format: "<< input_format << std::endl;
     return 1;
@@ -179,6 +182,17 @@ vtkMultiBlockDataSet* read_exodusII(char* fname){
 vtkUnstructuredGrid* read_pvtu(char* fname) {
    std::cout << "Reading from VTK parallel unstructured grid file: " <<fname<<std::endl;
    vtkXMLPUnstructuredGridReader* reader= vtkXMLPUnstructuredGridReader::New();
+   reader->SetFileName(fname);
+   reader->Update();
+   vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
+   ugrid->ShallowCopy(reader->GetOutput());
+   reader->Delete();
+   return ugrid;
+ }
+
+vtkUnstructuredGrid* read_triangle(char* fname) {
+   std::cout << "Reading from VTK parallel unstructured grid file: " <<fname<<std::endl;
+   vtkTriangleReader* reader= vtkTriangleReader::New();
    reader->SetFileName(fname);
    reader->Update();
    vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
