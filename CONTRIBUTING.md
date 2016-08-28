@@ -10,3 +10,5 @@ This software is designed to produce files useful for Fluidity developers. In pa
 ### Adding Readers and Writers
 
 Any additional file types should be supported through adding new files with a name following the pattern `vtkFileTypeReader.cxx` implementing a reader into one of the intrinsic VTK data types, preferably `vtkUnstructuredGrid`. Any additional transformations necessary to rename arrays to implement physical surface labelling can be placed into the main mesh converter file.
+
+If the reader/writer accepts/produces a `vtkUnstructuredGrid` then it can be trivially supported using the templated `read` and `write` functions. See the implementation for `vtu` files in `mesh_converter.cxx` as an example.
