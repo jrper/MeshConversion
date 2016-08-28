@@ -1,13 +1,3 @@
-#include "vtkExodusIIReader.h"
-#include "vtkGmshReader.h"
-#include "vtkXMLUnstructuredGridReader.h"
-#include "vtkXMLPUnstructuredGridReader.h"
-#include "vtkTriangleReader.h"
-#include "vtkMultiBlockDataSet.h"
-#include "vtkUnstructuredGrid.h"
-#include "vtkXMLUnstructuredGridWriter.h"
-#include "vtkXMLMultiBlockDataWriter.h"
-#include "vtkGmshWriter.h"
 #include "vtkAppendFilter.h"
 #include "vtkCellData.h"
 #include "vtkIntArray.h"
@@ -18,6 +8,32 @@
 #include <string>
 
 #include "mesh_converter.h"
+
+
+template <typename T>
+vtkUnstructuredGrid* read(char* fname) 
+{
+  std::cout << "Reading from file: " <<fname<<std::endl;
+  T* reader= T::New();
+  reader->SetFileName(fname);
+  reader->Update();
+  vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
+  ugrid->ShallowCopy(as_unstructured_grid(reader->GetOutput()));
+  reader->Delete();
+  return ugrid;
+}
+
+template <typename T>
+int write(vtkUnstructuredGrid* data, char* fname)
+{
+  std::cout << "Writing to file: " <<fname<<std::endl;
+  T* writer = T::New();  
+  writer->SetFileName(fname);
+  writer->SetInputData(data);
+  writer->Write();
+  writer->Delete();
+  return 0;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -56,13 +72,12 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  vtkMultiBlockDataSet* mbdata = NULL;
   vtkUnstructuredGrid* ugdata  = NULL;
 
   if (input_format.compare("exodus")==0 ) {
-    mbdata = read_exodusII(argv[optind++]);
+    ugdata = read_exodusII(argv[optind++]);
   }  else if (input_format.compare("gmsh")==0 ) {
-    ugdata = read_gmsh(argv[optind++]);
+    ugdata = read<vtkGmshReader>(argv[optind++]);
   }  else if (input_format.compare("vtu")==0 ) {
     ugdata = read_vtu(argv[optind++]);
   }  else if (input_format.compare("pvtu")==0 ) {
@@ -75,30 +90,20 @@ int main(int argc, char *argv[]) {
   }
   
   int flag;
-  
+
   if (output_format.compare("gmsh")==0) {
-    if (mbdata) {
-      ugdata=multiblock_to_unstucturedgrid(mbdata);
-    }
     flag=write_gmsh(ugdata,argv[optind]);
   } else if (output_format.compare("vtu")==0) {
-    if (mbdata) {
-      ugdata=multiblock_to_unstucturedgrid(mbdata);
-    }
-    flag=write_vtu(ugdata,argv[optind]);
-  }  else if (output_format.compare("vtm")==0) {
-    if (ugdata) {
-      //      mbdata=unstucturedgrid_to_multiblock(ugdata);
-    }
-    flag=write_vtm(mbdata,argv[optind]);
+    flag=write<vtkXMLUnstructuredGridWriter>(ugdata,argv[optind]);
+  } else if (output_format.compare("vtm")==0) {
+    flag=write_vtm(as_multiblock(ugdata),argv[optind]);
+  } else if (output_format.compare("triangle")==0) {
+    flag=write_triangle(ugdata,argv[optind]);
   } else {
     std::cout<< "Unrecognised output format: "<<output_format<<std::endl;
     return 1;
   }
   
-  if (mbdata){
-    mbdata->Delete();
-  }
   if (ugdata){
     ugdata->Delete();
   }
@@ -106,7 +111,21 @@ int main(int argc, char *argv[]) {
   return flag;
 }
 
-vtkUnstructuredGrid* multiblock_to_unstucturedgrid(vtkMultiBlockDataSet* data) {
+vtkUnstructuredGrid* as_unstructured_grid(vtkDataObject* data) {
+  if (data->IsA("vtkUnstructuredGrid")) {
+    return vtkUnstructuredGrid::SafeDownCast(data);
+  } else if (data->IsA("vtkMultiBlockDataSet")) {
+    vtkMultiBlockDataSet* mbdata = vtkMultiBlockDataSet::SafeDownCast(data);
+    return multiblock_to_unstructured_grid(mbdata);
+  }
+  return NULL;
+}
+
+vtkMultiBlockDataSet* as_multiblock(vtkDataObject* data) {
+  return NULL;
+}
+
+vtkUnstructuredGrid* multiblock_to_unstructured_grid(vtkMultiBlockDataSet* data) {
   vtkAppendFilter* appender = vtkAppendFilter::New();
   appender->SetMergePoints(1);
 
@@ -140,26 +159,27 @@ vtkUnstructuredGrid* multiblock_to_unstucturedgrid(vtkMultiBlockDataSet* data) {
   return output;
 }
 
-vtkMultiBlockDataSet* read_exodusII(char* fname){
+// Readers
+
+vtkUnstructuredGrid* read_exodusII(char* fname){
 
   std::cout << "Reading from file: " <<fname<<std::endl;
 
-  vtkExodusIIReader* r = vtkExodusIIReader::New();
+  vtkExodusIIReader* reader = vtkExodusIIReader::New();
 
-  r->SetFileName(fname);
-  r->UpdateInformation();
-  r->GenerateGlobalNodeIdArrayOn();
-  r->GenerateGlobalElementIdArrayOn();
-  r->GenerateObjectIdCellArrayOn();
-  for (int i=0; i<r->GetNumberOfSideSetArrays(); i++) {
-    r->SetSideSetArrayStatus(r->GetSideSetArrayName(i),1);
+  reader->SetFileName(fname);
+  reader->UpdateInformation();
+  reader->GenerateGlobalNodeIdArrayOn();
+  reader->GenerateGlobalElementIdArrayOn();
+  reader->GenerateObjectIdCellArrayOn();
+  for (int i=0; i<reader->GetNumberOfSideSetArrays(); i++) {
+    reader->SetSideSetArrayStatus(reader->GetSideSetArrayName(i),1);
   }
-  r->Update();
-
-  vtkMultiBlockDataSet* data;
-  data = r->GetOutput();
-
-  return data;
+  reader->Update();
+  vtkUnstructuredGrid* ugrid = vtkUnstructuredGrid::New();
+  ugrid->ShallowCopy(as_unstructured_grid(reader->GetOutput()));
+  reader->Delete();
+  return ugrid;
  }
 
  vtkUnstructuredGrid* read_gmsh(char* fname) {
@@ -196,7 +216,7 @@ vtkUnstructuredGrid* read_pvtu(char* fname) {
  }
 
 vtkUnstructuredGrid* read_triangle(char* fname) {
-   std::cout << "Reading from VTK parallel unstructured grid file: " <<fname<<std::endl;
+   std::cout << "Reading from triangle files: " <<fname<<std::endl;
    vtkTriangleReader* reader= vtkTriangleReader::New();
    reader->SetFileName(fname);
    reader->Update();
@@ -218,6 +238,10 @@ int print_version(){
   return 0;
 }
 
+// Special Writers
+
+
+
 int write_gmsh(vtkUnstructuredGrid* data, char* fname){
 
   std::cout << "Writing to file: " <<fname<<std::endl;
@@ -230,11 +254,11 @@ int write_gmsh(vtkUnstructuredGrid* data, char* fname){
   return 0;
 }
 
-int write_vtu(vtkUnstructuredGrid* data, char* fname){
+int write_triangle(vtkUnstructuredGrid* data, char* fname){
 
-  std::cout << "Writing to file: " <<fname<<std::endl;
+  std::cout << "Writing to files: " <<fname<<std::endl;
 
-  vtkXMLUnstructuredGridWriter* writer = vtkXMLUnstructuredGridWriter::New();  
+  vtkTriangleWriter* writer = vtkTriangleWriter::New();  
   writer->SetFileName(fname);
   writer->SetInputData(data);
   writer->Write();

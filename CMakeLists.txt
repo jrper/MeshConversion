@@ -17,7 +17,8 @@ include_directories(include)
 set(IO_SOURCE_FILES 
   src/vtkGmshReader.cxx
   src/vtkTriangleReader.cxx
-  src/vtkGmshWriter.cxx)
+  src/vtkGmshWriter.cxx
+  src/vtkTriangleWriter.cxx)
 
 add_executable(mesh_converter src/mesh_converter.cxx ${IO_SOURCE_FILES})
 target_link_libraries(mesh_converter ${VTK_LIBRARIES})
