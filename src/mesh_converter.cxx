@@ -31,9 +31,13 @@ int write(vtkUnstructuredGrid* data, char* fname)
   std::cout << "Writing to file: " <<fname<<std::endl;
   T* writer = T::New();  
   writer->SetFileName(fname);
-writer->SetInputData(data);
-writer->Write();
-writer->Delete();
+#if VTK_MAJOR_VERSION <= 5
+  writer->SetInput(data);
+#else
+  writer->SetInputData(data);
+#endif
+  writer->Write();
+  writer->Delete();
   return 0;
 }
 
@@ -278,7 +282,11 @@ int write_gmsh(vtkUnstructuredGrid* data, char* fname){
 
   vtkGmshWriter* writer = vtkGmshWriter::New();  
   writer->SetFileName(fname);
+#if VTK_MAJOR_VERSION <= 5
+  writer->SetInput(data);
+#else
   writer->SetInputData(data);
+#endif
   writer->Write();
   writer->Delete();
   return 0;
@@ -290,7 +298,11 @@ int write_triangle(vtkUnstructuredGrid* data, char* fname){
 
   vtkTriangleWriter* writer = vtkTriangleWriter::New();  
   writer->SetFileName(fname);
+#if VTK_MAJOR_VERSION <= 5
+  writer->SetInput(data);
+#else
   writer->SetInputData(data);
+#endif
   writer->Write();
   writer->Delete();
   return 0;
@@ -302,7 +314,11 @@ int write_vtm(vtkMultiBlockDataSet* data, char* fname){
 
   vtkXMLMultiBlockDataWriter* writer = vtkXMLMultiBlockDataWriter::New();  
   writer->SetFileName(fname);
+#if VTK_MAJOR_VERSION <= 5
+  writer->SetInput(data);
+#else
   writer->SetInputData(data);
+#endif
   writer->Write();
   writer->Delete();
   return 0;
