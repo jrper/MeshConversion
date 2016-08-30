@@ -13,9 +13,11 @@
 
 
 template <typename T>
-vtkUnstructuredGrid* read(char* fname) 
+vtkUnstructuredGrid* read(char* fname, int verbosity) 
 {
-  std::cout << "Reading from file: " <<fname<<std::endl;
+  if (verbosity) {
+    std::cout << "Reading from file: " <<fname<<std::endl;
+  }
   T* reader= T::New();
   reader->SetFileName(fname);
   reader->Update();
@@ -26,9 +28,11 @@ vtkUnstructuredGrid* read(char* fname)
 }
 
 template <typename T>
-int write(vtkUnstructuredGrid* data, char* fname)
+int write(vtkUnstructuredGrid* data, char* fname, int verbosity)
 {
-  std::cout << "Writing to file: " <<fname<<std::endl;
+  if (verbosity) {
+    std::cout << "Writing to file: " <<fname<<std::endl;
+  }
   T* writer = T::New();  
   writer->SetFileName(fname);
 #if VTK_MAJOR_VERSION <= 5
@@ -45,7 +49,7 @@ int main(int argc, char *argv[]) {
 
   std::string input_format="exodus";
   std::string output_format="gmsh";
-  int opt, option_index=0, verbosity=0;
+  int opt, option_index=0, verbosity=1;
 
   static struct option long_options[] = {
             {"input_format",     required_argument, 0,  'i' },
@@ -97,15 +101,15 @@ int main(int argc, char *argv[]) {
   vtkUnstructuredGrid* ugdata  = NULL;
 
   if (input_format.compare("exodus")==0 ) {
-    ugdata = read_exodusII(argv[optind++]);
+    ugdata = read_exodusII(argv[optind++], verbosity);
   }  else if (input_format.compare("gmsh")==0 ) {
-    ugdata = read<vtkGmshReader>(argv[optind++]);
+    ugdata = read<vtkGmshReader>(argv[optind++], verbosity);
   }  else if (input_format.compare("vtu")==0 ) {
-    ugdata = read_vtu(argv[optind++]);
+    ugdata = read_vtu(argv[optind++], verbosity);
   }  else if (input_format.compare("pvtu")==0 ) {
-    ugdata = read_pvtu(argv[optind++]);
+    ugdata = read_pvtu(argv[optind++], verbosity);
   }  else if (input_format.compare("triangle")==0 ) {
-    ugdata = read_triangle(argv[optind++]);
+    ugdata = read_triangle(argv[optind++], verbosity);
   }  else {
     std::cout<< "Unrecognised input format: "<< input_format << std::endl;
     return 1;
@@ -114,13 +118,13 @@ int main(int argc, char *argv[]) {
   int flag;
 
   if (output_format.compare("gmsh")==0) {
-    flag=write_gmsh(ugdata,argv[optind]);
+    flag=write_gmsh(ugdata,argv[optind], verbosity);
   } else if (output_format.compare("vtu")==0) {
-    flag=write<vtkXMLUnstructuredGridWriter>(ugdata,argv[optind]);
+    flag=write<vtkXMLUnstructuredGridWriter>(ugdata,argv[optind], verbosity);
   } else if (output_format.compare("vtm")==0) {
-    flag=write_vtm(as_multiblock(ugdata),argv[optind]);
+    flag=write_vtm(as_multiblock(ugdata),argv[optind], verbosity);
   } else if (output_format.compare("triangle")==0) {
-    flag=write_triangle(ugdata,argv[optind]);
+    flag=write_triangle(ugdata,argv[optind], verbosity);
   } else {
     std::cout<< "Unrecognised output format: "<<output_format<<std::endl;
     return 1;
@@ -183,10 +187,10 @@ vtkUnstructuredGrid* multiblock_to_unstructured_grid(vtkMultiBlockDataSet* data)
 
 // Special Readers
 
-vtkUnstructuredGrid* read_exodusII(char* fname){
-
-  std::cout << "Reading from file: " <<fname<<std::endl;
-
+vtkUnstructuredGrid* read_exodusII(char* fname, int verbosity){
+  if (verbosity) {
+    std::cout << "Reading from file: " <<fname<<std::endl;
+  }
   vtkExodusIIReader* reader = vtkExodusIIReader::New();
 
   reader->SetFileName(fname);
@@ -204,8 +208,10 @@ vtkUnstructuredGrid* read_exodusII(char* fname){
   return ugrid;
  }
 
- vtkUnstructuredGrid* read_gmsh(char* fname) {
+vtkUnstructuredGrid* read_gmsh(char* fname, int verbosity) {
+  if (verbosity) {
    std::cout << "Reading from GMSH file: " <<fname<<std::endl;
+  }
    vtkGmshReader* reader= vtkGmshReader::New();
    reader->SetFileName(fname);
    reader->Update();
@@ -215,8 +221,10 @@ vtkUnstructuredGrid* read_exodusII(char* fname){
    return ugrid;
  }
 
- vtkUnstructuredGrid* read_vtu(char* fname) {
-   std::cout << "Reading from VTK unstructured grid file: " <<fname<<std::endl;
+vtkUnstructuredGrid* read_vtu(char* fname, int verbosity) {
+  if (verbosity) {
+       std::cout << "Reading from VTK unstructured grid file: " <<fname<<std::endl;
+     }
    vtkXMLUnstructuredGridReader* reader= vtkXMLUnstructuredGridReader::New();
    reader->SetFileName(fname);
    reader->Update();
@@ -226,7 +234,7 @@ vtkUnstructuredGrid* read_exodusII(char* fname){
    return ugrid;
  }
 
-vtkUnstructuredGrid* read_pvtu(char* fname) {
+vtkUnstructuredGrid* read_pvtu(char* fname, int verbosity) {
    std::cout << "Reading from VTK parallel unstructured grid file: " <<fname<<std::endl;
    vtkXMLPUnstructuredGridReader* reader= vtkXMLPUnstructuredGridReader::New();
    reader->SetFileName(fname);
@@ -237,7 +245,7 @@ vtkUnstructuredGrid* read_pvtu(char* fname) {
    return ugrid;
  }
 
-vtkUnstructuredGrid* read_triangle(char* fname) {
+vtkUnstructuredGrid* read_triangle(char* fname, int verbosity) {
    std::cout << "Reading from triangle files: " <<fname<<std::endl;
    vtkTriangleReader* reader= vtkTriangleReader::New();
    reader->SetFileName(fname);
@@ -268,7 +276,7 @@ int print_version(){
   std::cout << "mesh_converter "
             << CONVERTER_MAJOR_VERSION<<"."<<CONVERTER_MINOR_VERSION
             <<std::endl;
-  std::cout << "\t Build against VTK version: " << VTK_VERSION << std::endl;
+  std::cout << "\t Built against VTK version: " << VTK_VERSION << std::endl;
   return 0;
 }
 
@@ -276,9 +284,10 @@ int print_version(){
 
 
 
-int write_gmsh(vtkUnstructuredGrid* data, char* fname){
-
-  std::cout << "Writing to file: " <<fname<<std::endl;
+int write_gmsh(vtkUnstructuredGrid* data, char* fname, int verbosity){
+  if (verbosity) {
+    std::cout << "Writing to file: " <<fname<<std::endl;
+  }
 
   vtkGmshWriter* writer = vtkGmshWriter::New();  
   writer->SetFileName(fname);
@@ -292,10 +301,11 @@ int write_gmsh(vtkUnstructuredGrid* data, char* fname){
   return 0;
 }
 
-int write_triangle(vtkUnstructuredGrid* data, char* fname){
-
-  std::cout << "Writing to files: " <<fname<<std::endl;
-
+int write_triangle(vtkUnstructuredGrid* data, char* fname, int verbosity){
+  if (verbosity) {
+    std::cout << "Writing to files: " <<fname<<std::endl;
+  }
+  
   vtkTriangleWriter* writer = vtkTriangleWriter::New();  
   writer->SetFileName(fname);
 #if VTK_MAJOR_VERSION <= 5
@@ -308,9 +318,10 @@ int write_triangle(vtkUnstructuredGrid* data, char* fname){
   return 0;
 }
 
-int write_vtm(vtkMultiBlockDataSet* data, char* fname){
-
-  std::cout << "Writing to file: " <<fname<<std::endl;
+int write_vtm(vtkMultiBlockDataSet* data, char* fname, int verbosity){
+  if (verbosity) {
+    std::cout << "Writing to file: " <<fname<<std::endl;
+  }
 
   vtkXMLMultiBlockDataWriter* writer = vtkXMLMultiBlockDataWriter::New();  
   writer->SetFileName(fname);
