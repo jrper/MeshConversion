@@ -17,7 +17,8 @@
 
 // GNU standard functions
 
-int print_usage();
+int print_help(char*);
+int print_usage(char*);
 int print_version();
 
 // converters

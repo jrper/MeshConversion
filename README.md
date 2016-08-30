@@ -17,7 +17,9 @@ Run with:
 Input formats supported:
  * exodusII
  * gmsh
+ * triangle(2d)/tetgen(3d)
  
 Output formats supported:
  * gmsh
  * vtu
+ * triangle(2d)/tetgen(3d)

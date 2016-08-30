@@ -2,9 +2,11 @@
 #include "vtkCellData.h"
 #include "vtkIntArray.h"
 #include "vtkIdTypeArray.h"
+#include "vtkVersion.h"
 
 #include <unistd.h>
 #include <stdio.h>
+#include <getopt.h>
 #include <string>
 
 #include "mesh_converter.h"
@@ -29,9 +31,9 @@ int write(vtkUnstructuredGrid* data, char* fname)
   std::cout << "Writing to file: " <<fname<<std::endl;
   T* writer = T::New();  
   writer->SetFileName(fname);
-  writer->SetInputData(data);
-  writer->Write();
-  writer->Delete();
+writer->SetInputData(data);
+writer->Write();
+writer->Delete();
   return 0;
 }
 
@@ -39,9 +41,19 @@ int main(int argc, char *argv[]) {
 
   std::string input_format="exodus";
   std::string output_format="gmsh";
-  int opt;
+  int opt, option_index=0, verbosity=0;
 
-  while (  (opt = getopt(argc, argv, "i::o::hV")) != -1 ) { 
+  static struct option long_options[] = {
+            {"input_format",     required_argument, 0,  'i' },
+            {"output_format",  required_argument,       0,  'o' },
+            {"help",  no_argument, 0,  'h' },
+	    {"quiet", no_argument,       0,  'v' },
+            {"verbose", no_argument,       0,  'v' },
+            {"version",  no_argument, 0, 'V'},
+  };
+
+  while (  (opt = getopt_long(argc, argv, "i::o::hvV",
+				long_options, &option_index)) != -1 ) { 
     switch ( opt ) {
     case 'i':
       if (optarg) {
@@ -54,8 +66,14 @@ int main(int argc, char *argv[]) {
       }
       break;
     case 'h':
-      print_usage();
+      print_help(argv[0]);
       return EXIT_SUCCESS;
+      break;
+    case 'q':
+      verbosity = 0;
+      break;
+    case 'v':
+      verbosity = 2;
       break;
     case 'V':
       print_version();
@@ -68,7 +86,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (argc <3) {
-    print_usage();
+    print_usage(argv[0]);
     return 1;
   }
 
@@ -159,7 +177,7 @@ vtkUnstructuredGrid* multiblock_to_unstructured_grid(vtkMultiBlockDataSet* data)
   return output;
 }
 
-// Readers
+// Special Readers
 
 vtkUnstructuredGrid* read_exodusII(char* fname){
 
@@ -226,8 +244,19 @@ vtkUnstructuredGrid* read_triangle(char* fname) {
    return ugrid;
  }
 
-int print_usage(){
-  std::cout << "usage: mesh_converter [-i input_format] [-o output_format] [-hV] input_file output_file"<<std::endl;
+int print_usage(char* name){
+  std::cout << "usage: " << name << " [-i input_format] [-o output_format] [-hqvV] input_file output_file"<<std::endl;
+  return 0;
+}
+
+int print_help(char* name){
+  print_usage(name);
+  std::cout << "\t -i --input_format \t Specify mesh format of input file" << std::endl;
+  std::cout << "\t -i --output_format \t Specify mesh format for output file" << std::endl;
+  std::cout << "\t -h --help \t Print this message" << std::endl;
+  std::cout << "\t -q --quiet \t Suppress output except error reporting" << std::endl;
+  std::cout << "\t -v --verbose \t Increase verbosity" << std::endl;
+  std::cout << "\t -V --version \t Report version information" << std::endl;
   return 0;
 }
 
@@ -235,6 +264,7 @@ int print_version(){
   std::cout << "mesh_converter "
             << CONVERTER_MAJOR_VERSION<<"."<<CONVERTER_MINOR_VERSION
             <<std::endl;
+  std::cout << "\t Build against VTK version: " << VTK_VERSION << std::endl;
   return 0;
 }
 
