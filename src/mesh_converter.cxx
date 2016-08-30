@@ -45,6 +45,8 @@ int write(vtkUnstructuredGrid* data, char* fname, int verbosity)
   return 0;
 }
 
+#ifdef CONVERTER
+
 int main(int argc, char *argv[]) {
 
   std::string input_format="exodus";
@@ -136,6 +138,8 @@ int main(int argc, char *argv[]) {
 
   return flag;
 }
+
+#endif // CONVERTER
 
 vtkUnstructuredGrid* as_unstructured_grid(vtkDataObject* data) {
   if (data->IsA("vtkUnstructuredGrid")) {

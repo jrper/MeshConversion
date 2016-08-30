@@ -1,3 +1,6 @@
+#ifndef MESH_CONVERTER_H
+#define MESH_CONVERTER_H
+
 #define CONVERTER_MAJOR_VERSION 0
 #define CONVERTER_MINOR_VERSION 5
 
@@ -38,3 +41,4 @@ int write_gmsh(vtkUnstructuredGrid*, char*, int);
 int write_vtm(vtkMultiBlockDataSet*, char*, int);
 int write_triangle(vtkUnstructuredGrid*, char*, int);
 
+#endif
