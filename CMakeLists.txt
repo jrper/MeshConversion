@@ -25,7 +25,7 @@ set_target_properties(mesh_converter PROPERTIES
   COMPILE_DEFINITIONS CONVERTER)
 target_link_libraries(mesh_converter ${VTK_LIBRARIES})
 
-add_library(meshconverter src/mesh_converter.cxx ${IO_SOURCE_FILES})
+add_library(meshconversion EXCLUDE_FROM_ALL src/mesh_converter.cxx ${IO_SOURCE_FILES})
 
 find_package( PkgConfig REQUIRED)
 pkg_search_module(CPPUNIT cppunit)

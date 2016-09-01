@@ -3,6 +3,7 @@
 #include "vtkIntArray.h"
 #include "vtkIdTypeArray.h"
 #include "vtkVersion.h"
+#include "vtkCellTypes.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -51,18 +52,19 @@ int main(int argc, char *argv[]) {
 
   std::string input_format="exodus";
   std::string output_format="gmsh";
-  int opt, option_index=0, verbosity=1;
+  int opt, option_index=0, verbosity=1, ascii=0;
 
   static struct option long_options[] = {
             {"input_format",     required_argument, 0,  'i' },
             {"output_format",  required_argument,       0,  'o' },
             {"help",  no_argument, 0,  'h' },
-	    {"quiet", no_argument,       0,  'v' },
+	    {"quiet", no_argument,       0,  'q' },
             {"verbose", no_argument,       0,  'v' },
             {"version",  no_argument, 0, 'V'},
+	    {"ascii", no_argument, 0, 'a'}
   };
 
-  while (  (opt = getopt_long(argc, argv, "i::o::hvV",
+  while (  (opt = getopt_long(argc, argv, "i:o:ahqvV",
 				long_options, &option_index)) != -1 ) { 
     switch ( opt ) {
     case 'i':
@@ -74,6 +76,9 @@ int main(int argc, char *argv[]) {
       if (optarg) {
 	output_format = optarg;
       }
+      break;
+    case 'a':
+      ascii = 1;
       break;
     case 'h':
       print_help(argv[0]);
@@ -120,7 +125,7 @@ int main(int argc, char *argv[]) {
   int flag;
 
   if (output_format.compare("gmsh")==0) {
-    flag=write_gmsh(ugdata,argv[optind], verbosity);
+    flag=write_gmsh(ugdata,argv[optind], verbosity, ascii);
   } else if (output_format.compare("vtu")==0) {
     flag=write<vtkXMLUnstructuredGridWriter>(ugdata,argv[optind], verbosity);
   } else if (output_format.compare("vtm")==0) {
@@ -187,6 +192,46 @@ vtkUnstructuredGrid* multiblock_to_unstructured_grid(vtkMultiBlockDataSet* data)
   appender->Delete();
 
   return output;
+}
+
+int get_mesh_dimension(vtkUnstructuredGrid* ugrid, int verbosity){
+
+  vtkCellTypes* cell_types = vtkCellTypes::New();
+  ugrid->GetCellTypes(cell_types);
+
+  int model_dim=-1;
+
+  for (int i=0; i<cell_types->GetNumberOfTypes(); i++){
+    switch(cell_types->GetCellType(i)) {
+    case VTK_EMPTY_CELL:
+      model_dim = std::max(model_dim,-1);
+      break;
+    case VTK_VERTEX:
+    case VTK_POLY_VERTEX:
+    case VTK_PIXEL:
+    case VTK_VOXEL:
+      model_dim = std::max(model_dim,0);
+      break;
+    case VTK_LINE:
+    case VTK_QUADRATIC_EDGE:
+      model_dim = std::max(model_dim,1);
+      break;
+    case VTK_TRIANGLE:
+    case VTK_QUAD:
+    case VTK_QUADRATIC_TRIANGLE:
+    case VTK_QUADRATIC_QUAD:
+      model_dim = std::max(model_dim,2);
+      break;
+    case VTK_TETRA:
+    case VTK_QUADRATIC_TETRA:
+    case VTK_HEXAHEDRON:
+    case VTK_QUADRATIC_HEXAHEDRON:
+      model_dim = std::max(model_dim,3);
+      break;
+    }
+  }
+
+  return model_dim;
 }
 
 // Special Readers
@@ -268,7 +313,8 @@ int print_usage(char* name){
 int print_help(char* name){
   print_usage(name);
   std::cout << "\t -i --input_format \t Specify mesh format of input file" << std::endl;
-  std::cout << "\t -i --output_format \t Specify mesh format for output file" << std::endl;
+  std::cout << "\t -o --output_format \t Specify mesh format for output file" << std::endl;
+  std::cout << "\t -a --ascii \t Output in ascii format [gmsh]" << std::endl;
   std::cout << "\t -h --help \t Print this message" << std::endl;
   std::cout << "\t -q --quiet \t Suppress output except error reporting" << std::endl;
   std::cout << "\t -v --verbose \t Increase verbosity" << std::endl;
@@ -288,7 +334,8 @@ int print_version(){
 
 
 
-int write_gmsh(vtkUnstructuredGrid* data, char* fname, int verbosity){
+int write_gmsh(vtkUnstructuredGrid* data, char* fname, int verbosity,
+	       int ascii){
   if (verbosity) {
     std::cout << "Writing to file: " <<fname<<std::endl;
   }
@@ -300,6 +347,9 @@ int write_gmsh(vtkUnstructuredGrid* data, char* fname, int verbosity){
 #else
   writer->SetInputData(data);
 #endif
+  if (ascii) {
+    writer->SetBinaryWriteMode(0);
+  }
   writer->Write();
   writer->Delete();
   return 0;

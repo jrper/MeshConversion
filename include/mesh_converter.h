@@ -37,7 +37,7 @@ vtkUnstructuredGrid*  read_pvtu(char*, int);
 vtkUnstructuredGrid*  read_triangle(char*, int);
 
 // special writers
-int write_gmsh(vtkUnstructuredGrid*, char*, int);
+int write_gmsh(vtkUnstructuredGrid*, char*, int, int);
 int write_vtm(vtkMultiBlockDataSet*, char*, int);
 int write_triangle(vtkUnstructuredGrid*, char*, int);
 
